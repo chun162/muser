@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../store/AppContext'
 import { mockGenerate } from '../lib/mockGenerate'
 import { generateVideo, urlToBlob } from '../lib/api'
-import { catLabel } from '../lib/format'
 import type { GenParams } from '../types'
 
 type Mode = 'text2video' | 'image2video' | 'firstlast'
@@ -89,82 +88,204 @@ export default function VideoGen() {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
+      {/* 页头 */}
+      <div>
+        <h1 className="text-2xl font-bold">视频生成</h1>
+        <p className="mt-1 text-sm text-neutral-500">文生视频 · 图生视频 · 首尾帧</p>
+      </div>
+
       {!activeProvider && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Mock 模式：未配置启用的模型，视频用本地占位。前往「设置」配置 BYOK 后即出真视频。
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          <span className="font-semibold">Mock 模式</span> — 未配置启用的模型，生成走本地占位。
+          前往 <Link to="/settings" className="underline hover:text-amber-100">设置</Link> 配置 BYOK 后即出真视频。
         </div>
       )}
-      {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</div>}
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
-      <h1 className="text-xl font-bold">视频生成</h1>
-
+      {/* 模式 tabs */}
       <div className="flex flex-wrap gap-2 text-sm">
         {(['text2video', 'image2video', 'firstlast'] as Mode[]).map((m) => (
-          <button key={m} className={`rounded-full px-3 py-1 ${mode === m ? 'bg-emerald-500 text-neutral-950' : 'bg-neutral-800 text-neutral-300'}`} onClick={() => setMode(m)}>
+          <button
+            key={m}
+            className={`rounded-full px-3.5 py-1.5 transition-colors ${
+              mode === m
+                ? 'bg-emerald-500/15 text-emerald-300 font-medium'
+                : 'bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200'
+            }`}
+            onClick={() => setMode(m)}
+          >
             {m === 'text2video' ? '文生视频' : m === 'image2video' ? '图生视频' : '首尾帧'}
           </button>
         ))}
       </div>
 
-      <textarea className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-sm" rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="一句话描述你想要的画面…" />
-
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-neutral-400">画风：</span>
-        <select className="rounded-lg border border-neutral-800 bg-neutral-900 p-1.5" value={selectedStyleId ?? ''} onChange={(e) => setSelectedStyleId(e.target.value || null)}>
-          <option value="">无（原画风）</option>
-          {styles.map((s) => (<option key={s.id} value={s.id}>{s.name}（{catLabel(s.category)}）</option>))}
-        </select>
-        <Link to="/styles" className="text-emerald-300 hover:underline">从画风库选择 →</Link>
+      {/* 提示词 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-neutral-300">提示词</label>
+        <textarea
+          className="w-full rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 text-sm placeholder-neutral-600 transition-colors focus:border-emerald-500/40 focus:bg-neutral-900"
+          rows={3}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="描述你想要的视频画面…"
+        />
       </div>
 
-      {mode !== 'text2video' && (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="text-neutral-400">{mode === 'firstlast' ? '首帧/尾帧' : '参考图'}：</span>
-          <input type="file" accept="image/*" onChange={pickRef} className="text-neutral-400" />
-          {refUrl && <img src={refUrl} alt="参考" className="h-12 w-12 rounded border border-neutral-700 object-cover" />}
+      {/* 画风 + 参考图 */}
+      <div className="flex flex-wrap items-start gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-neutral-400">画风</span>
+          <select
+            className="rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-200"
+            value={selectedStyleId ?? ''}
+            onChange={(e) => setSelectedStyleId(e.target.value || null)}
+          >
+            <option value="">默认</option>
+            {styles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <Link to="/styles" className="text-emerald-400 hover:underline">
+            浏览画风库
+          </Link>
         </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        <label className="space-y-1">
-          <span className="text-neutral-400">分辨率</span>
-          <select className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5" value={params.resolution} onChange={(e) => setParams({ ...params, resolution: e.target.value })}>
-            {RESOLUTIONS.map((r) => (<option key={r} value={r}>{r}</option>))}
-          </select>
-        </label>
-        <label className="space-y-1">
-          <span className="text-neutral-400">时长(秒)</span>
-          <input type="number" min={1} max={16} className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5" value={params.duration} onChange={(e) => setParams({ ...params, duration: Number(e.target.value) })} />
-        </label>
-        <label className="space-y-1">
-          <span className="text-neutral-400">帧率</span>
-          <input type="number" min={1} max={60} className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5" value={params.fps} onChange={(e) => setParams({ ...params, fps: Number(e.target.value) })} />
-        </label>
-        <label className="space-y-1">
-          <span className="text-neutral-400">运动强度</span>
-          <select className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5" value={params.motion} onChange={(e) => setParams({ ...params, motion: e.target.value })}>
-            {MOTIONS.map((m) => (<option key={m} value={m}>{m}</option>))}
-          </select>
-        </label>
+        {mode !== 'text2video' && (
+          <div className="flex items-center gap-2">
+            <span className="text-neutral-400">{mode === 'firstlast' ? '首帧/尾帧' : '参考图'}</span>
+            <label className="cursor-pointer rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-neutral-300 hover:bg-neutral-800 transition-colors">
+              {refFile ? refFile.name.slice(0, 12) : '选择图片'}
+              <input type="file" accept="image/*" onChange={pickRef} className="hidden" />
+            </label>
+            {refUrl && (
+              <img src={refUrl} alt="参考" className="h-8 w-8 rounded border border-neutral-700 object-cover" />
+            )}
+            {refUrl && (
+              <button onClick={() => { setRefFile(null); setRefUrl(null) }} className="text-xs text-red-400 hover:underline">
+                取消
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-neutral-950 disabled:opacity-50" onClick={onGenerate} disabled={!prompt.trim() || loading}>
-        {loading ? '生成中…' : activeProvider ? '生成（真实模型）' : '生成（Mock）'}
+      {/* 参数卡片 */}
+      <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-neutral-300">参数设置</span>
+          {!activeProvider && (
+            <span className="text-xs text-emerald-400">仅 Mock 模式下可用</span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+          <label className="space-y-1">
+            <span className="text-neutral-500">分辨率</span>
+            <select
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-200"
+              value={params.resolution}
+              onChange={(e) => setParams({ ...params, resolution: e.target.value })}
+            >
+              {RESOLUTIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-neutral-500">时长（秒）</span>
+            <input
+              type="number"
+              min={1}
+              max={16}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-200"
+              value={params.duration}
+              onChange={(e) => setParams({ ...params, duration: Number(e.target.value) })}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-neutral-500">帧率</span>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-200"
+              value={params.fps}
+              onChange={(e) => setParams({ ...params, fps: Number(e.target.value) })}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-neutral-500">运动强度</span>
+            <select
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-200"
+              value={params.motion}
+              onChange={(e) => setParams({ ...params, motion: e.target.value })}
+            >
+              {MOTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* 生成按钮 */}
+      <button
+        className="btn-glow w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-neutral-950 transition-colors hover:bg-emerald-400 disabled:opacity-40 sm:w-auto sm:px-8"
+        onClick={onGenerate}
+        disabled={!prompt.trim() || loading}
+      >
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-neutral-950 border-t-transparent" />
+            生成中…
+          </span>
+        ) : activeProvider ? (
+          `生成视频${activeProvider.defaultModel ? `（${activeProvider.defaultModel}）` : ''}`
+        ) : (
+          '生成（Mock）'
+        )}
       </button>
 
+      {/* 结果 */}
       {results.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {results.map((r, i) => (
-            <div key={i} className="space-y-2 rounded-lg border border-neutral-800 p-2">
-              {r.blob ? (
-                <img src={r.url} alt={`视频占位${i + 1}`} className="aspect-video w-full rounded object-cover" />
-              ) : (
-                <video src={r.url} controls className="aspect-video w-full rounded object-cover" />
-              )}
-              <button className="w-full rounded bg-neutral-800 py-1 text-xs hover:bg-neutral-700" onClick={() => saveOne(r)}>保存到作品</button>
-            </div>
-          ))}
+        <div className="animate-fade-up space-y-3">
+          <h2 className="text-sm font-medium text-neutral-300">生成结果</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {results.map((r, i) => (
+              <div key={i} className="group relative overflow-hidden rounded-xl border border-neutral-800/60 bg-neutral-900/40">
+                {r.blob ? (
+                  <img
+                    src={r.url}
+                    alt={`视频占位 ${i + 1}`}
+                    className="aspect-video w-full rounded-t-xl object-cover transition-transform group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <video
+                    src={r.url}
+                    controls
+                    className="aspect-video w-full rounded-t-xl object-cover"
+                  />
+                )}
+                <div className="p-2">
+                  <button
+                    className="w-full rounded-lg bg-neutral-800 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-emerald-500 hover:text-neutral-950 hover:font-semibold"
+                    onClick={() => saveOne(r)}
+                  >
+                    保存到作品
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>
