@@ -8,6 +8,8 @@ export default defineConfig({
   // GitHub Pages：仓库名为 muser，base 设为 /muser/
   base: '/muser/',
   server: {
+    host: '0.0.0.0',
+    allowedHosts: ['longdianzhisuan.cn', 'www.longdianzhisuan.cn', 'longdianzhisuan'],
     // 开发期把 /api 代理到后端（Express，默认 3000），避免跨域
     proxy: {
       '/api': 'http://localhost:3000',
