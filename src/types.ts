@@ -9,6 +9,9 @@ export interface GenParams {
   sampler?: string // 如 dpmpp_2m
   negativePrompt?: string
   batch: number // 默认 1
+  // Seedream / OpenAI 兼容参数
+  quality?: string // "standard" | "hd"
+  style?: string // "vivid" | "natural"
 }
 
 export interface Style {

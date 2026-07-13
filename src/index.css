@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+/* ===== 词元智算 自定义样式 ===== */
+
+:root {
+  --brand: #10b981;
+  --brand-dim: #059669;
+  --bg-card: rgba(38, 38, 38, 0.6);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
+}
+
+.animate-fade-up-d1 { animation-delay: 0.05s; }
+.animate-fade-up-d2 { animation-delay: 0.12s; }
+.animate-fade-up-d3 { animation-delay: 0.20s; }
+.animate-fade-up-d4 { animation-delay: 0.28s; }
+
+/* 渐变 Hero */
+.hero-gradient {
+  background: linear-gradient(135deg, #0a1628 0%, #0f2027 40%, #0a1a1a 100%);
+}
+
+/* 毛玻璃卡片 */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(42, 42, 42, 0.7);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* selection */
+::selection { background: rgba(16, 185, 129, 0.3); }
+
+/* textarea 默认重置 */
+textarea, input, select {
+  outline: none;
+}
+textarea:focus, input:focus, select:focus {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* 按钮脉冲 */
+@keyframes pulse-subtle {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+.btn-glow {
+  animation: pulse-subtle 2s infinite;
+}
+
+/* 萌新引导 */
+.onboarding-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.3s;
+}
+.onboarding-dot.active {
+  background: var(--brand);
+}
