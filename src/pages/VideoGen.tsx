@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../store/AppContext'
 import { mockGenerate } from '../lib/mockGenerate'
-import { generateVideo, urlToBlob } from '../lib/api'
+import { generateVideoDirect, generateVideo, urlToBlob } from '../lib/api'
 import type { GenParams } from '../types'
 
 type Mode = 'text2video' | 'image2video' | 'firstlast'
@@ -50,13 +50,27 @@ export default function VideoGen() {
     setError(null)
     try {
       if (activeProvider) {
-        const res = await generateVideo({
-          provider: activeProvider,
-          model: activeProvider.defaultModel,
-          prompt: finalPrompt(),
-          mode,
-          params,
-        })
+        let res: { videos: string[] }
+        // 如果 baseUrl 含 acedata 走直连（Seedance BYOK），否则走后端代理
+        if (activeProvider.baseUrl.includes('acedata') || activeProvider.baseUrl.includes('topenrouter')) {
+          res = await generateVideoDirect(
+            activeProvider.baseUrl,
+            activeProvider.apiKey,
+            activeProvider.defaultModel,
+            finalPrompt(),
+            mode,
+            params,
+            refFile,
+          )
+        } else {
+          res = await generateVideo({
+            provider: activeProvider,
+            model: activeProvider.defaultModel,
+            prompt: finalPrompt(),
+            mode,
+            params,
+          })
+        }
         setResults(res.videos.map((url) => ({ url })))
       } else {
         const genParams: GenParams = { resolution: params.resolution, steps: 30, sampler: 'dpmpp_2m', negativePrompt: '', batch: params.batch }

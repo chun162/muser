@@ -148,6 +148,162 @@ export async function generateVideo(input: VideoApiInput): Promise<{ videos: str
   return { videos: data.videos }
 }
 
+// ===== Seedance 直连（BYOK，类似 generateImageDirect） =====
+// 通过 acedata.cloud 网关调用字节跳动 Seedance 2.0
+// 文档: POST https://api.acedata.cloud/seedance/videos
+
+interface SeedanceContentItem {
+  type: 'text' | 'image_url'
+  text?: string
+  image_url?: { url: string; detail?: 'auto' | 'low' | 'high' }
+  role?: 'first_frame' | 'last_frame'
+}
+
+interface SeedanceJob {
+  success: boolean
+  task_id: string
+  trace_id: string
+  data: {
+    task_id: string
+    status: 'processing' | 'succeeded' | 'failed'
+    video_url?: string
+    model: string
+  }
+}
+
+/**
+ * 直连 Seedance 文生视频 / 图生视频（同步返回 / 轮询）
+ * 支持 acedata.cloud 和 topenrouter.com 两种网关
+ * prompt 内可接参数指令: --rs 720p --rt 16:9 --dur 5 --fps 24 --wm false
+ */
+export async function generateVideoDirect(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  prompt: string,
+  mode: 'text2video' | 'image2video' | 'firstlast',
+  params: { resolution: string; duration: number; fps: number; motion: string },
+  refImage?: File | null,
+): Promise<{ videos: string[] }> {
+  const promptWithArgs = prompt + ` --dur ${params.duration} --fps ${params.fps}`
+  const base = baseUrl.replace(/\/+$/, '')
+
+  // TopenRouter → OpenAI 兼容 /v1/video/generations
+  if (base.includes('topenrouter')) {
+    return generateVideoOpenAI(base, apiKey, model, promptWithArgs)
+  }
+
+  // Seedance acedata → /seedance/videos
+  return generateVideoAcedata(base, apiKey, model, promptWithArgs, mode, refImage)
+}
+
+async function generateVideoOpenAI(
+  base: string,
+  apiKey: string,
+  model: string,
+  prompt: string,
+): Promise<{ videos: string[] }> {
+  const resp = await fetch(`${base}/video/generations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ model, prompt, n: 1 }),
+  })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: { message: resp.statusText } }))
+    throw new Error(err.error?.message || `Video API 错误 (${resp.status})`)
+  }
+  const json = (await resp.json()) as { data: { url?: string; b64_json?: string }[] }
+  const videos: string[] = []
+  for (const item of json.data) {
+    if (item.url) videos.push(item.url)
+    else if (item.b64_json) videos.push(`data:video/mp4;base64,${item.b64_json}`)
+  }
+  if (videos.length === 0) throw new Error('视频生成未返回有效数据')
+  return { videos }
+}
+
+async function generateVideoAcedata(
+  base: string,
+  apiKey: string,
+  model: string,
+  prompt: string,
+  mode: 'text2video' | 'image2video' | 'firstlast',
+  refImage?: File | null,
+): Promise<{ videos: string[] }> {
+  const content: SeedanceContentItem[] = [{ type: 'text', text: prompt }]
+
+  if (mode === 'image2video' && refImage) {
+    const b64 = await fileToBase64(refImage)
+    content.unshift({
+      type: 'image_url',
+      image_url: { url: b64, detail: 'auto' },
+    })
+  }
+
+  const url = `${base}/seedance/videos`
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ content, model }),
+  })
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: { message: resp.statusText } }))
+    throw new Error(err.error?.message || `Seedance API 错误 (${resp.status})`)
+  }
+
+  const json = (await resp.json()) as SeedanceJob
+  if (!json.success || !json.data) throw new Error('Seedance 请求失败')
+  if (json.data.status === 'failed') throw new Error('Seedance 视频生成失败')
+  if (json.data.video_url) return { videos: [json.data.video_url] }
+
+  return pollSeedanceTask(base, apiKey, json.data.task_id, 30, 180)
+}
+
+async function pollSeedanceTask(
+  base: string,
+  apiKey: string,
+  taskId: string,
+  intervalSec: number,
+  maxSec: number,
+): Promise<{ videos: string[] }> {
+  const queryUrl = `${base}/seedance/videos/result?taskId=${encodeURIComponent(taskId)}`
+  const deadline = Date.now() + maxSec * 1000
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, intervalSec * 1000))
+    const resp = await fetch(queryUrl, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (!resp.ok) continue
+    const json = (await resp.json()) as SeedanceJob
+    if (!json.success || !json.data) continue
+    if (json.data.status === 'succeeded' && json.data.video_url) {
+      return { videos: [json.data.video_url] }
+    }
+    if (json.data.status === 'failed') {
+      throw new Error('Seedance 视频生成失败')
+    }
+  }
+
+  throw new Error('Seedance 视频生成超时')
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result as string)
+    r.onerror = reject
+    r.readAsDataURL(file)
+  })
+}
+
 // ===== 工具函数 =====
 
 export async function urlToBlob(url: string): Promise<Blob> {

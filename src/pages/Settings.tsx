@@ -16,6 +16,8 @@ const PRESETS: { label: string; name: string; baseUrl: string; defaultModel: str
   { label: 'SiliconFlow', name: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1', defaultModel: 'deepseek-ai/DeepSeek-V3' },
   { label: '火山引擎 Ark', name: '火山引擎 Ark', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'ep-xxx' },
   { label: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', defaultModel: 'dall-e-3' },
+  { label: 'Seedance (acedata)', name: 'Seedance', baseUrl: 'https://api.acedata.cloud', defaultModel: 'doubao-seedance-1-0-pro-250528' },
+  { label: 'TopenRouter 视频', name: 'TopenRouter Video', baseUrl: 'https://api.topenrouter.com/v1', defaultModel: 'seedance-v2.0' },
 ]
 
 export default function Settings() {
