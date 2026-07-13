@@ -52,3 +52,7 @@ models/
 # ===== Agent / 工具目录 =====
 .codebuddy/
 .vercel
+
+push*.mjs
+*.tmp
+
