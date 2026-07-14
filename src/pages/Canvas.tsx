@@ -27,6 +27,47 @@ export default function Canvas() {
   // tldraw 挂载
   const handleMount = useCallback((editor: any) => {
     editorRef.current = editor
+
+    // 首次打开且无 snapshot：创建引导节点
+    if (!snapshot) {
+      const centre = { x: 400, y: 200 }
+      editor.createShapes([
+        {
+          id: 'shape:welcome',
+          type: 'text',
+          x: centre.x - 120,
+          y: centre.y,
+          props: {
+            color: 'var(--color-text)',
+            size: 'xl',
+            text: '欢迎使用无限画布 🎨',
+            font: 'draw',
+            w: 400,
+          },
+        },
+        {
+          id: 'shape:tip1',
+          type: 'text',
+          x: centre.x - 120,
+          y: centre.y + 60,
+          props: {
+            color: 'var(--color-text)',
+            size: 'm',
+            text: '• 左侧工具栏选择绘图工具\n• 右侧可调整样式（颜色/粗细/填充）\n• 按 S 切换到选择工具\n• 从作品列表中拖入图片到画布',
+            font: 'sans',
+            w: 500,
+          },
+        },
+        {
+          id: 'shape:tip2',
+          type: 'arrow',
+          x: centre.x + 280,
+          y: centre.y + 120,
+          props: { color: 'var(--color-text)', dash: 'draw', arrowheadStart: 'none', arrowheadEnd: 'arrow' },
+        },
+      ])
+    }
+
     // 监听变化，防抖保存到 IndexedDB
     editor.store.listen(
       () => {
