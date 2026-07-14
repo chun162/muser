@@ -38,7 +38,7 @@ export default function Canvas() {
           x: centre.x - 120,
           y: centre.y,
           props: {
-            color: 'var(--color-text)',
+            color: 'white',
             size: 'xl',
             text: '欢迎使用无限画布 🎨',
             font: 'draw',
@@ -51,7 +51,7 @@ export default function Canvas() {
           x: centre.x - 120,
           y: centre.y + 60,
           props: {
-            color: 'var(--color-text)',
+            color: 'grey',
             size: 'm',
             text: '• 左侧工具栏选择绘图工具\n• 右侧可调整样式（颜色/粗细/填充）\n• 按 S 切换到选择工具\n• 从作品列表中拖入图片到画布',
             font: 'sans',
@@ -63,7 +63,7 @@ export default function Canvas() {
           type: 'arrow',
           x: centre.x + 280,
           y: centre.y + 120,
-          props: { color: 'var(--color-text)', dash: 'draw', arrowheadStart: 'none', arrowheadEnd: 'arrow' },
+          props: { color: 'grey', dash: 'draw', arrowheadStart: 'none', arrowheadEnd: 'arrow' },
         },
       ])
     }
