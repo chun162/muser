@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { toRichText } from '@tldraw/tlschema'
 import { Tldraw, exportAs, type TLEditorSnapshot } from '@tldraw/tldraw'
 import '@tldraw/tldraw/tldraw.css'
 import { useApp } from '../store/AppContext'
@@ -40,9 +41,12 @@ export default function Canvas() {
           props: {
             color: 'white',
             size: 'xl',
-            text: '欢迎使用无限画布 🎨',
             font: 'draw',
             w: 400,
+            richText: toRichText('欢迎使用无限画布 🎨'),
+            textAlign: 'start',
+            scale: 1,
+            autoSize: false,
           },
         },
         {
@@ -53,9 +57,12 @@ export default function Canvas() {
           props: {
             color: 'grey',
             size: 'm',
-            text: '• 左侧工具栏选择绘图工具\n• 右侧可调整样式（颜色/粗细/填充）\n• 按 S 切换到选择工具\n• 从作品列表中拖入图片到画布',
             font: 'sans',
             w: 500,
+            richText: toRichText('• 左侧工具栏选择绘图工具\n• 右侧可调整样式（颜色/粗细/填充）\n• 按 S 切换到选择工具\n• 从作品列表中拖入图片到画布'),
+            textAlign: 'start',
+            scale: 1,
+            autoSize: false,
           },
         },
         {
