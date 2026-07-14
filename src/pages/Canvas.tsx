@@ -13,6 +13,7 @@ export default function Canvas() {
   const [loading, setLoading] = useState(true)
   const [pickImg, setPickImg] = useState(false)
   const editorRef = useRef<any>(null)
+  const mountedRef = useRef(false)
 
   // 加载持久化的画布数据
   useEffect(() => {
@@ -20,7 +21,16 @@ export default function Canvas() {
       .getAll<{ id: string; snapshot?: TLEditorSnapshot }>('projects')
       .then((list) => {
         const p = list.find((x) => x.id === PROJECT_ID)
-        if (p?.snapshot) setSnapshot(p.snapshot)
+        if (p?.snapshot) {
+          // 尝试校验 snapshot 是否有效（旧版 props.text 会导致校验失败）
+          if (p.snapshot.document && p.snapshot.document.store) {
+            setSnapshot(p.snapshot)
+          } else {
+            // snapshot 不完整，清掉
+            console.warn('[Canvas] 发现损坏的 snapshot，已跳过')
+            idb.del('projects', PROJECT_ID)
+          }
+        }
       })
       .finally(() => setLoading(false))
   }, [])
@@ -28,9 +38,11 @@ export default function Canvas() {
   // tldraw 挂载
   const handleMount = useCallback((editor: any) => {
     editorRef.current = editor
+    mountedRef.current = true
 
-    // 首次打开且无 snapshot：创建引导节点
-    if (!snapshot) {
+    // 检查画布是否有内容（首次打开 or 全是空白页）
+    const allShapes = editor.getCurrentPageShapeIds()
+    if (allShapes.size === 0) {
       const centre = { x: 400, y: 200 }
       editor.createShapes([
         {
@@ -66,7 +78,7 @@ export default function Canvas() {
           },
         },
         {
-          id: 'shape:tip2',
+          id: 'shape:arrow-hint',
           type: 'arrow',
           x: centre.x + 280,
           y: centre.y + 120,
@@ -80,13 +92,17 @@ export default function Canvas() {
       () => {
         clearTimeout(editor.__saveTimer)
         editor.__saveTimer = setTimeout(async () => {
-          const snap = editor.getSnapshot()
-          await idb.put('projects', {
-            id: PROJECT_ID,
-            name: '无限画布',
-            snapshot: snap,
-            updatedAt: Date.now(),
-          })
+          try {
+            const snap = editor.getSnapshot()
+            await idb.put('projects', {
+              id: PROJECT_ID,
+              name: '无限画布',
+              snapshot: snap,
+              updatedAt: Date.now(),
+            })
+          } catch (e) {
+            console.warn('[Canvas] 保存 snapshot 失败:', e)
+          }
         }, 2000)
       },
       { source: 'user', scope: 'document' },
@@ -99,7 +115,6 @@ export default function Canvas() {
     const editor = editorRef.current
     if (!g || !editor) return
     const url = URL.createObjectURL(g.resultBlob)
-    // tldraw v5: putExternalContent 插入图片
     editor.putExternalContent({
       type: 'embed',
       url,
@@ -111,8 +126,13 @@ export default function Canvas() {
   function handleExport() {
     const editor = editorRef.current
     if (!editor) return
-    const ids = [...editor.getCurrentPageShapeIds()]
-    exportAs(editor, ids, { format: 'png', background: true })
+    try {
+      const ids = [...editor.getCurrentPageShapeIds()]
+      if (ids.length === 0) return
+      exportAs(editor, ids, { format: 'png', background: true })
+    } catch (e) {
+      console.warn('[Canvas] 导出失败:', e)
+    }
   }
 
   if (loading) {
@@ -138,7 +158,7 @@ export default function Canvas() {
       <div>
         <h1 className="text-2xl font-bold">无限画布</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          由 tldraw 驱动 · 白板 / 绘图 / 标注 · 自动本地保存 · 导出 PNG / SVG
+          由 tldraw 驱动 · 白板 / 绘图 / 标注 · 自动本地保存 · 导出 PNG
         </p>
       </div>
 
