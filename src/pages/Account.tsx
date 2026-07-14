@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { authApi, getToken, setToken } from '../lib/auth'
 
-// P4 账户·VIP（真实后端：SQLite + JWT）
 export default function Account() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -16,80 +15,75 @@ export default function Account() {
   }, [])
 
   async function submit() {
-    setError(null)
-    setLoading(true)
+    setError(null); setLoading(true)
     try {
       const r = mode === 'login' ? await authApi.login(email, password) : await authApi.register(email, password)
       setToken(r.token)
       const m = await authApi.me()
-      setMe(m)
-      setPassword('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '操作失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function subscribe() {
-    setLoading(true)
-    try {
-      await authApi.subscribe('vip')
-      const m = await authApi.me()
-      setMe(m)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '订阅失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function logout() {
-    setToken(null)
-    setMe(null)
-    setEmail('')
+      setMe(m); setPassword('')
+    } catch (e) { setError(e instanceof Error ? e.message : '操作失败') }
+    finally { setLoading(false) }
   }
 
   if (me) {
-    const isVip = me.subscription?.plan === 'vip' && me.subscription?.status === 'active'
     return (
-      <section className="space-y-4">
-        <h1 className="text-xl font-bold">账户 · VIP</h1>
-        <div className="rounded-lg border border-neutral-800 p-3 text-sm">
-          <div>已登录：<span className="text-emerald-300">{me.user.email}</span></div>
-          <div className="mt-1">
-            会员状态：<span className={isVip ? 'text-amber-300' : 'text-neutral-400'}>{isVip ? 'VIP（不排队 · 超清）' : '免费用户'}</span>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>账户</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>VIP 订阅与账户管理</p>
+        </div>
+        <div className="surface-card p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+              style={{ background: 'var(--brand-gradient)', color: '#fff' }}>
+              {me.user.email[0].toUpperCase()}
+            </div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{me.user.email}</p>
+              {me.subscription && (
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {me.subscription.plan} · <span style={{ color: me.subscription.status === 'active' ? 'var(--success)' : 'var(--warning)' }}>
+                    {me.subscription.status === 'active' ? '有效' : me.subscription.status}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
+          <button className="rounded-lg px-3 py-1.5 text-xs transition-colors"
+            style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error-text)' }}
+            onClick={() => { setToken(null); setMe(null) }}>退出登录</button>
         </div>
-        <div className="flex gap-2">
-          {!isVip && (
-            <button onClick={subscribe} disabled={loading} className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-neutral-950 disabled:opacity-50">
-              {loading ? '处理中…' : '升级 VIP'}
-            </button>
-          )}
-          <button onClick={logout} className="rounded-lg bg-neutral-800 px-3 py-1.5 text-sm">退出</button>
-        </div>
-        {error && <div className="text-sm text-red-300">{error}</div>}
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-xl font-bold">账户 · VIP</h1>
-      <div className="flex gap-2 text-sm">
-        {(['login', 'register'] as const).map((m) => (
-          <button key={m} onClick={() => setMode(m)} className={`rounded-full px-3 py-1 ${mode === m ? 'bg-emerald-500 text-neutral-950' : 'bg-neutral-800 text-neutral-300'}`}>
-            {m === 'login' ? '登录' : '注册'}
-          </button>
-        ))}
+    <div className="mx-auto max-w-sm space-y-6 pt-10">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>账户</h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>{mode === 'login' ? '登录' : '注册'} · VIP 订阅打通云端算力</p>
       </div>
-      <input className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-sm" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="邮箱" />
-      <input type="password" className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-sm" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码（≥6位）" />
-      <button onClick={submit} disabled={loading || !email || !password} className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-neutral-950 disabled:opacity-50">
-        {loading ? '处理中…' : mode === 'login' ? '登录' : '注册并登录'}
-      </button>
-      {error && <div className="text-sm text-red-300">{error}</div>}
-    </section>
+
+      {error && <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', color: 'var(--error-text)' }}>{error}</div>}
+
+      <div className="surface-card p-5 space-y-4">
+        <input className="field-input" placeholder="邮箱" type="email" value={email}
+          onChange={(e) => setEmail(e.target.value)} />
+        <input className="field-input" placeholder="密码" type="password" value={password}
+          onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+
+        <button className="btn-brand w-full justify-center" onClick={submit} disabled={loading || !email || !password}>
+          {loading ? '处理中…' : mode === 'login' ? '登录' : '注册'}
+        </button>
+
+        <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          {mode === 'login' ? '没有账户？' : '已有账户？'}
+          <button className="ml-1 underline" style={{ color: 'var(--accent-text)' }}
+            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null) }}>
+            {mode === 'login' ? '注册' : '登录'}
+          </button>
+        </p>
+      </div>
+    </div>
   )
 }
