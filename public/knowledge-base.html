@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人知识库 · 词元智算</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #07070a;
+      --bg-surface: #14141d;
+      --bg-elevated: #1a1a25;
+      --text-primary: #f7f7fa;
+      --text-secondary: #d4d4dc;
+      --text-tertiary: #9d9db0;
+      --text-muted: #6c6c80;
+      --border-primary: #232333;
+      --glass-bg: rgba(20, 20, 30, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --brand-violet: #a78bfa;
+      --brand-indigo: #818cf8;
+      --brand-cyan: #22d3ee;
+      --brand-gradient: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #22d3ee 100%);
+      --brand-gradient-soft: linear-gradient(135deg, rgba(167,139,250,0.18) 0%, rgba(129,140,248,0.10) 50%, rgba(34,211,238,0.18) 100%);
+      --accent-bg: rgba(167, 139, 250, 0.14);
+      --accent-border: rgba(167, 139, 250, 0.35);
+      --success: #34d399;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Noto Sans SC", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
+    /* Aurora 背景 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(60% 50% at 12% 8%, rgba(167,139,250,0.18) 0%, transparent 70%),
+        radial-gradient(55% 45% at 88% 4%, rgba(34,211,238,0.12) 0%, transparent 70%),
+        radial-gradient(50% 50% at 50% 100%, rgba(129,140,248,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    .viewport { width: 100%; position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      background: rgba(7, 7, 10, 0.7);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-primary);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: var(--brand-gradient);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+    }
+    .nav { display: flex; gap: 28px; }
+    .nav a { font-size: 14px; color: var(--text-tertiary); transition: color .2s; }
+    .nav a:hover, .nav a.active { color: var(--text-primary); }
+    .status-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      border-radius: 20px;
+      font-size: 12px; color: var(--success);
+    }
+    .status-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+    /* Hero */
+    .hero { padding: 110px 40px 70px; text-align: center; position: relative; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 16px;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: 20px;
+      font-size: 13px; color: var(--brand-violet);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 52px; font-weight: 700; line-height: 1.15; margin-bottom: 20px;
+      background: linear-gradient(135deg, #f7f7fa 20%, var(--brand-violet) 60%, var(--brand-cyan) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 17px; color: var(--text-tertiary); line-height: 1.7;
+      max-width: 620px; margin: 0 auto 36px;
+    }
+    .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 26px; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer; border: none;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary { background: var(--brand-gradient); color: #fff; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(129,140,248,0.35); }
+    .btn-ghost { background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--glass-border); }
+    .btn-ghost:hover { border-color: var(--accent-border); background: var(--accent-bg); }
+
+    /* Features */
+    .section { padding: 80px 40px; }
+    .section-head { text-align: center; margin-bottom: 48px; }
+    .section-title { font-size: 34px; font-weight: 700; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: var(--text-tertiary); }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .feature-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      transition: transform .25s, border-color .25s;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: var(--accent-border); }
+    .feature-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      background: var(--brand-gradient-soft);
+      border: 1px solid var(--accent-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-tertiary); line-height: 1.65; }
+
+    /* Docs demo */
+    .docs { background: rgba(10,10,16,0.5); }
+    .docs-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      backdrop-filter: blur(12px);
+    }
+    .docs-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .doc-search {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-surface); border: 1px solid var(--border-primary);
+      border-radius: var(--radius-sm); padding: 10px 14px; min-width: 260px;
+    }
+    .doc-search input { background: none; border: none; outline: none; color: var(--text-primary); font-size: 14px; width: 100%; font-family: inherit; }
+    .doc-stats { display: flex; gap: 28px; }
+    .doc-stat-num { font-size: 24px; font-weight: 700; color: var(--brand-violet); }
+    .doc-stat-label { font-size: 12px; color: var(--text-muted); }
+    .doc-list { display: flex; flex-direction: column; gap: 10px; }
+    .doc-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      cursor: pointer; transition: transform .2s, border-color .2s;
+    }
+    .doc-card:hover { transform: translateX(4px); border-color: var(--accent-border); }
+    .doc-ic { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .doc-info { flex: 1; }
+    .doc-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .doc-meta { font-size: 12px; color: var(--text-muted); }
+    .doc-cat { padding: 4px 12px; border-radius: 20px; font-size: 12px; background: var(--accent-bg); color: var(--brand-violet); }
+
+    /* Actions */
+    .actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; max-width: 900px; margin: 0 auto; }
+    .action-card { padding: 32px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 14px; }
+    .action-card.primary { background: var(--brand-gradient); color: #fff; }
+    .action-card.secondary { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); }
+    .action-card h3 { font-size: 19px; font-weight: 600; }
+    .action-card p { font-size: 14px; opacity: .9; line-height: 1.6; }
+    .action-card .btn { align-self: flex-start; margin-top: 6px; }
+    .action-card.primary .btn { background: #fff; color: #6d28d9; }
+    .action-card.secondary .btn { background: var(--brand-gradient); color: #fff; }
+
+    /* Footer */
+    .footer { padding: 40px; border-top: 1px solid var(--border-primary); text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 40px; }
+    .footer a { color: var(--brand-violet); }
+
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .actions-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 38px; }
+      .nav { display: none; }
+    }
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .container, .header, .hero, .section { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <!-- Header -->
+    <header class="header">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">🧠</div>
+        <span>词元智算 · 个人知识库</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">首页</a>
+        <a href="index.html">图片生成</a>
+        <a href="index.html">视频生成</a>
+        <a href="index.html">无限画布</a>
+        <a href="knowledge-base.html" class="active">知识库</a>
+      </nav>
+      <div class="status-badge"><div class="status-dot"></div><span>应用运行中</span></div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">🚀 AI Agent 驱动 · 本地优先</div>
+      <h1>构建你的智慧知识体系</h1>
+      <p class="hero-desc">
+        基于 CodeBuddy Agent SDK 构建的个人知识库。管理知识文档，通过 AI 对话智能检索与利用知识——全部数据存储在本地，隐私安全有保障。
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="launchApp()">🚀 启动完整应用</button>
+        <a href="index.html" class="btn btn-ghost">← 返回词元智算</a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">核心功能</h2>
+        <p class="section-sub">六大能力，打造属于你自己的智能知识管理系统</p>
+      </div>
+      <div class="container">
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <h3>知识库管理</h3>
+            <p>创建、编辑、删除知识文档，支持分类和标签组织，Markdown 格式自由书写</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>智能搜索</h3>
+            <p>全文搜索文档标题、内容和标签，快速定位所需知识</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>知识对话</h3>
+            <p>AI 自动检索知识库文档，基于你的知识库回答问题并引用来源</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>流式响应</h3>
+            <p>实时显示 AI 回复内容，毫秒级响应，对话体验流畅自然</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <h3>工具调用</h3>
+            <p>可视化展示 Agent 工具使用过程，文件操作、代码执行一应俱全</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>自定义 Agent</h3>
+            <p>创建和管理多个 Agent 配置，自定义系统提示词和工作模式</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Docs demo -->
+    <section class="section docs">
+      <div class="section-head">
+        <h2 class="section-title">知识文档</h2>
+        <p class="section-sub">浏览和管理你的知识资产</p>
+      </div>
+      <div class="container">
+        <div class="docs-panel">
+          <div class="docs-bar">
+            <div class="doc-search">
+              <span>🔍</span>
+              <input type="text" placeholder="搜索文档..." oninput="filterDocs(this.value)">
+            </div>
+            <div class="doc-stats">
+              <div><div class="doc-stat-num" id="docCount">3</div><div class="doc-stat-label">文档总数</div></div>
+              <div><div class="doc-stat-num" id="catCount">3</div><div class="doc-stat-label">分类数</div></div>
+              <div><div class="doc-stat-num">MD</div><div class="doc-stat-label">文档格式</div></div>
+            </div>
+          </div>
+          <div class="doc-list" id="docList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="section">
+      <div class="actions-grid">
+        <div class="action-card primary">
+          <h3>启动完整知识库</h3>
+          <p>打开带有 AI 对话、流式响应、工具调用的完整知识库应用。所有数据存储在本地，隐私安全。</p>
+          <button class="btn" onclick="launchApp()">启动应用 →</button>
+        </div>
+        <div class="action-card secondary">
+          <h3>添加新文档</h3>
+          <p>将知识文档放入知识库目录，支持 Markdown 格式，自动同步到知识库中。</p>
+          <button class="btn" onclick="openKnowledgeDir()">打开知识库目录 →</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>词元智算 · 个人知识库 · 基于 CodeBuddy Agent SDK 构建 · <a href="https://github.com/chun162/muser" target="_blank">GitHub</a></p>
+      <p style="margin-top:8px;">本地优先 · 数据私有 · 隐私无忧</p>
+    </footer>
+  </div>
+
+  <script>
+    const documents = [
+      { id: 1, title: '个人知识库使用指南', category: '使用指南', tags: '教程 · 入门', date: '2026-07-04',
+        content: '欢迎使用个人知识库。支持创建、编辑、删除文档，AI 自动检索并回答问题。' },
+      { id: 2, title: 'Function Calling 原理', category: '技术文档', tags: 'AI · 工具调用', date: '2026-07-05',
+        content: 'Function Calling 允许模型在对话中主动调用外部工具，支持多轮连续调用。' },
+      { id: 3, title: '芍药种植技术笔记', category: '农业知识', tags: '种植 · 道地药材', date: '2026-07-06',
+        content: '芍药定植密度、施肥方案、病虫害防治要点整理。' }
+    ];
+
+    function renderDocs(list) {
+      const c = document.getElementById('docList');
+      document.getElementById('docCount').textContent = list.length;
+      document.getElementById('catCount').textContent = new Set(list.map(d => d.category)).size;
+      c.innerHTML = list.map(d => `
+        <div class="doc-card" onclick="launchApp()">
+          <div class="doc-ic">📄</div>
+          <div class="doc-info">
+            <div class="doc-title">${d.title}</div>
+            <div class="doc-meta">${d.date} · ${d.tags}</div>
+          </div>
+          <span class="doc-cat">${d.category}</span>
+          <span style="color:var(--text-muted);">→</span>
+        </div>`).join('');
+    }
+    function filterDocs(q) {
+      q = q.toLowerCase();
+      renderDocs(documents.filter(d =>
+        d.title.toLowerCase().includes(q) || d.category.toLowerCase().includes(q) || d.tags.toLowerCase().includes(q)));
+    }
+    function launchApp() { window.open('http://localhost:5173', '_blank'); }
+    function openKnowledgeDir() { window.open('http://localhost:5173/knowledge-base', '_blank'); }
+
+    renderDocs(documents);
+  </script>
+</body>
+</html>
